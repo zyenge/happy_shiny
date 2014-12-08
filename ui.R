@@ -21,13 +21,27 @@ shinyUI(
       p("If your peak is right to the overall users' distribution, you may be happier than most people (in this survey anyway)"),
       br(),
       br(),
+      
       h4('Happiness Swings'),
       plotOutput("Var_Dist"),
       br(),
       p("If you are more to the left, you've got have a strong heart for the big ups and downs in you life."),
-      p("If you are more to the right..your happiness level is so stable..what are you? a rock?"),
+      p("If you are more to the right..your happiness level is so stable..what are you? a rock?"),      
+      br(),
+      br(),
+      h4('True to yourself: When in doubt, do something else'),
+      plotOutput("preference_hist"),
+      br(),
+      p("X-axis is normalized happiness score with average happiness at 0.  is Pink bars: people who prefer not to do something else; Blue bars: People who prefer to do something else. Green bars: People aren't sure..."),
+      p("Dotted line shows the average of each group. You are slightly unhappy if you are not sure about whether you'd prefer to do something else or not, so, get up and go do something else"),
+	  
+	  br(),
+	  br(),
 	  h4('Happiness Day'),
-      plotOutput("Var_Time_Dist")
+      plotOutput("Var_Time_Dist"),
+      
+      p(" **TODO**  ")
+	  
     )
   )
 )
