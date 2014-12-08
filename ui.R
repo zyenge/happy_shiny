@@ -25,8 +25,9 @@ shinyUI(
       plotOutput("Var_Dist"),
       br(),
       p("If you are more to the left, you've got have a strong heart for the big ups and downs in you life."),
-      p("If you are more to the right..your happiness level is so stable..what are you? a rock?")
-
+      p("If you are more to the right..your happiness level is so stable..what are you? a rock?"),
+	  h4('Happiness Day'),
+      plotOutput("Var_Time_Dist")
     )
   )
 )

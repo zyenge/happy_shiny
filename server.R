@@ -1,6 +1,7 @@
 library(shiny)
 library(ggplot2) 
-library(grid) #needed for arrow head
+library(grid)
+library(gridExtra) #needed for arrow head
 
 #setwd('personal/happy_shiny/')
 df <- read.csv('mvp_exported.csv', na.strings = "NULL")
@@ -10,12 +11,18 @@ Q1_dist <- as.data.frame(df_nok$Q1, names='Q1')
 Q1_dist$code <- 'All Users'
 colnames(Q1_dist) <- c("Q1", "code")
 variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
+weekday_score_df <- data.frame(aggregate(Z_Q1 ~ code*week_day,df,mean))
+period_score_df <- data.frame(aggregate(Z_Q1 ~ code*period,df,mean))
+
+weekday_score_all_df <- data.frame(aggregate(Z_Q1 ~ week_day,df,mean))
+
+valid_codes <- list(df$code)
 
 
 
 shinyServer(function(input, output) {
 
-	formulaText <- reactive({
+	codename <- reactive({
     input$text1
   	})
   	output$text2 <- renderText({
@@ -23,16 +30,35 @@ shinyServer(function(input, output) {
   	})
 	
 
+	#Q1 score 
 	Q1_Plot <- reactive({
    #one user 
-    Q1_p <- subset(df, code==input$text1, select=c(Q1,code))
+    Q1_p <- subset(df, code==codename(), select=c(Q1,code))
 	 Q1_p$code<- factor(Q1_p$code)
 	 Q1_personal <- rbind(Q1_p, Q1_dist)
    
   	})
 	
-  var_plot <- reactive({variance_df$to_clr<- variance_df$code==input$text1
-    variance_df})
+	#Q1 variance
+   var_plot <- reactive({
+	   	variance_df$to_clr<- variance_df$code==codename()
+    	variance_df})
+	
+	#Q1 score*week_day plot
+   week_day_plot <- reactive({
+	   weekday_score_df_sub<- subset(weekday_score_df, weekday_score_df$code==codename())
+	   weekday_score_df_sub
+	   })
+   
+   #Q1 score*period plot
+   period_plot <- reactive({
+   	   period_score_df_sub<- subset(period_score_df, period_score_df$code==codename())
+   	   period_score_df_sub
+   	   })
+	   
+   week_day_all_plot <- reactive({
+	   weekday_score_all_df
+   })
   
 
 
@@ -59,6 +85,27 @@ shinyServer(function(input, output) {
 
     
     print(out_p2)
+  
+  })
+  
+  output$Var_Time_Dist <- renderPlot({
+	  
+	  if (codename()>1) {
+			p2<- ggplot(na.omit(week_day_plot()), aes(x=reorder(week_day,-Z_Q1), y=Z_Q1, fill=week_day)) + 
+					geom_bar(stat="identity") +
+					labs(x = "Weekday",y = "Happiness Score Normalized",title="Your Happiest Day")
+			p3<- ggplot(na.omit(period_plot()), aes(x=reorder(period,-Z_Q1), y=Z_Q1, fill=period)) + 
+					geom_bar(stat="identity") +
+					labs(x = "Period",y = "Happiness Score Normalized",title="Your Happiest Time of Day")
+			print(grid.arrange(p2,p3,nrow=1))
+	  } else {
+			p2<- ggplot(na.omit(week_day_all_plot()), aes(x=reorder(week_day,-Z_Q1), y=Z_Q1, fill=week_day)) + 
+					geom_bar(stat="identity") +
+					labs(x = "Weekday",y = "Happiness Score Normalized",title="People's Happiest Day") +
+					scale_fill_discrete("Week Day")
+			print(p2)	
+	  }
+	  
   
   })
 
