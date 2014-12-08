@@ -4,7 +4,7 @@ library(ggplot2)
 
 
 df <- read.csv('mvp_exported.csv', na.strings = "NULL")
-df_nok <- df[df$email!='kraja05@gmail.com',]
+df_nok <- df[df$email!=' ',]
 Q1_dist <- as.data.frame(df_nok$Q1, names='Q1')
 Q1_dist$email <- 'all'
 colnames(Q1_dist) <- c("Q1", "email")
