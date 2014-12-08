@@ -14,6 +14,7 @@ mean_df <-data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))
 
 
 preference_p <- ggplot(df_nok, aes(x=Z_Q1, fill=perfer_not)) + geom_histogram(binwidth=.3, alpha=.5, position="identity")+
+    scale_fill_discrete(name="Prefer to do something else?")+
     geom_segment(aes(x =  mean_df[mean_df$perfer_not=="No",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="No",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
     geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
     geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+

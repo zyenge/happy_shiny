@@ -30,11 +30,11 @@ shinyUI(
       
       br(),
       br(),
-      h4('True to yourself: When in double, do something else'),
+      h4('True to yourself: When in doubt, do something else'),
       plotOutput("preference_hist"),
       br(),
-      p("The pink bars are happier than the blue bars, and the green bars in the middle don't know what they want..."),
-      p("You are slightly unhappy if you are not sure about whether you'd prefer to do something else or not, so, get up and go do something else")
+      p("X-axis is normalized happiness score with average happiness at 0.  is Pink bars: people who prefer not to do something else; Blue bars: People who prefer to do something else. Green bars: People aren't sure..."),
+      p("Dotted line shows the average of each group. You are slightly unhappy if you are not sure about whether you'd prefer to do something else or not, so, get up and go do something else")
       
     )
   )
