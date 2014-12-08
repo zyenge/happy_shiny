@@ -10,28 +10,37 @@ Q1_dist <- as.data.frame(df_nok$Q1, names='Q1')
 Q1_dist$code <- 'All Users'
 colnames(Q1_dist) <- c("Q1", "code")
 variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
+mean_df <-data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))
 
+
+preference_p <- ggplot(df_nok, aes(x=Z_Q1, fill=perfer_not)) + geom_histogram(binwidth=.3, alpha=.5, position="identity")+
+    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="No",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="No",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
+    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
+    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+
+    xlab("Normalized Happiness ( 0 is the average)")
 
 
 shinyServer(function(input, output) {
 
-	formulaText <- reactive({
-    input$text1
-  	})
-  	output$text2 <- renderText({
-    formulaText()
-  	})
+	codename <- reactive({
+   input$text1
+    })
+
+  	#output$text2 <- renderText({
+    #codename()
+  	#})
 	
+    
 
 	Q1_Plot <- reactive({
    #one user 
-    Q1_p <- subset(df, code==input$text1, select=c(Q1,code))
+    Q1_p <- subset(df, code==codename(), select=c(Q1,code))
 	 Q1_p$code<- factor(Q1_p$code)
 	 Q1_personal <- rbind(Q1_p, Q1_dist)
    
   	})
 	
-  var_plot <- reactive({variance_df$to_clr<- variance_df$code==input$text1
+  var_plot <- reactive({variance_df$to_clr<- variance_df$code==codename()
     variance_df})
   
 
@@ -59,7 +68,9 @@ shinyServer(function(input, output) {
 
     
     print(out_p2)
-  
   })
+  #output$text2<-renderText(names(mean_df))
+  output$preference_hist <- renderPlot({print(preference_p)})
+  
 
 }) 
