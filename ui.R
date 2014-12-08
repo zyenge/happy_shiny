@@ -2,20 +2,19 @@ shinyUI(
 
   fluidPage(
 
-    titlePanel("Happiness Score Distribution"),
+    titlePanel("Happiness Report"),
 
     sidebarLayout(
 
-      sidebarPanel(
-          
-        textInput(inputId="text1", label = "email address"),
+      sidebarPanel( 
+        textInput(inputId="text1", label = "Enter your code here"),
         submitButton('Submit')
         
                 
     ),
 
     mainPanel(
-      p('Your email address'),
+      h4('Happiness Score Distribution: You vs. all Users'),
       textOutput('text2'),
       plotOutput("featurePlot")
     )
