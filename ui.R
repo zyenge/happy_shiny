@@ -15,7 +15,7 @@ shinyUI(
 
     mainPanel(
       h4('Happiness Score Distribution: You vs. all Users'),
-      #textOutput('oid2'),
+      #textOutput('text2'),
       plotOutput("Q1_Dist"),
       p("*For users with more than 5 responses"),
       p("If your peak is right to the overall users' distribution, you may be happier than most people (in this survey anyway)"),
@@ -35,13 +35,18 @@ shinyUI(
       br(),
       p("X-axis is normalized happiness score with average happiness at 0. Pink bars: people who prefer not to do something else; Blue bars: People who prefer to do something else. Green bars: People who aren't sure..."),
       p("Dotted lines show the average within each group. Intuitively, Pink group is happier than the Blue group. As for the times that are 'not sure', it's left to the 0. So you are slightly unhappy when you are not sure, so.. get up and go do something else :)"),
-	    p("*Note: for your nerds out there, we ran an ANOVA test to compare the means across groups, the means are significantly different, with a <0.005 p value"),
-	  br(),
-	  br(),
-	  h4('Happiness Day'),
+	    br(),
+	     br(),
+	     h4('Happiest Day of Week'),
       plotOutput("Var_Time_Dist"),
       
-      p(" **TODO**  ")
+      p(" **TODO**  "),
+      p(" **Happiest time of the day, happiest place**  "),
+
+
+
+      p("*Note in the end: for the average comparisons above, unless addressed otherwise, we have ran ANOVA tests, the means are different, with a significant p value")
+       
 	  
     )
   )

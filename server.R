@@ -17,16 +17,20 @@ weekday_score_df <- data.frame(aggregate(Z_Q1 ~ code*week_day,df,mean))
 period_score_df <- data.frame(aggregate(Z_Q1 ~ code*period,df,mean))
 weekday_score_all_df <- data.frame(aggregate(Z_Q1 ~ week_day,df,mean))
 
-valid_codes <- list(df$code)
 
-#mean
-mean_df <-data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))
+########mean  for perference 
+#mean_df <-data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))
+#x1 <-  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="No",]$Z_Q1
+#x2 <- data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Yes",]$Z_Q1
+#x3 <- data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Not Sure",]$Z_Q1
 preference_p <- ggplot(df_nok, aes(x=Z_Q1, fill=perfer_not)) + geom_histogram(binwidth=.3, alpha=.5, position="identity")+
     scale_fill_discrete(name="Prefer to do something else?")+
-    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="No",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="No",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
-    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
-    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+
+    geom_segment(aes(x =  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="No",]$Z_Q1, y =60, xend = data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="No",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
+    geom_segment(aes(x =  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Yes",]$Z_Q1, y =60, xend = data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Yes",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
+    geom_segment(aes(x =  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Not Sure",]$Z_Q1, y =60, xend = data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Not Sure",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+
     xlab("Normalized Happiness ( 0 is the average)")
+
+###################
 
 
 shinyServer(function(input, output) {
@@ -34,9 +38,7 @@ shinyServer(function(input, output) {
 	codename <- reactive({
     input$text1
   	})
-  	output$text2 <- renderText({
-    formulaText()
-  	})
+  	
 
 	#Q1 score 
 	Q1_Plot <- reactive({
@@ -117,7 +119,8 @@ shinyServer(function(input, output) {
   
   })
   #output$text2<-renderText(names(mean_df))
-  output$preference_hist <- renderPlot({print(preference_p)})
+  #output$text2 <- renderText({names(mean_df)})
+  output$preference_hist <- renderPlot(print(preference_p))
   
 
 }) 
