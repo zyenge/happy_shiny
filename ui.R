@@ -39,7 +39,10 @@ shinyUI(
 	     br(),
 	     h4('Happiest Day of Week'),
       plotOutput("Var_Time_Dist"),
-      
+      br(),
+      br(),
+      h4("Happiest location + activity combo"),
+      plotOutput("loc_act_p"),
       p(" **TODO**  "),
       p(" **Happiest time of the day, happiest place**  "),
 

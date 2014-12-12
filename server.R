@@ -2,6 +2,7 @@ library(shiny)
 library(ggplot2) 
 library(grid)
 library(gridExtra) #needed for arrow head
+#library(RODBC)
 
 #setwd('personal/happy_shiny/')
 df <- read.csv('mvp_exported.csv', na.strings = "NULL")
@@ -12,6 +13,28 @@ Q1_dist$code <- 'All Users'
 colnames(Q1_dist) <- c("Q1", "code")
 variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
 
+#########
+# mysql <-odbcConnect("local_mysql")
+# loc_act <- sqlQuery(mysql, "
+# SELECT case when location<>'Other' then location else Q2_Other end as Location,
+# case when act<>'Other' then act else Q3_Other end as act,
+#  count(distinct code) user_cnt,  count(*) cnt, avg(Z_q1) 
+# FROM test.mvp_exported group by location, act having user_cnt>5
+# ;
+# ");
+# close(mysql)
+###
+loc_act <- read.csv('loc_act.csv', na.strings = "NULL")
+names(loc_act) <- c('loc','act','user_cnt','response_cnt','avg_Q1')
+loc_act <- ggplot(loc_act, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,label=act)) +
+  geom_bar(stat="identity") + coord_flip()+
+  geom_text(color='darkorchid4',size=5,fontface='bold',hjust=-0.4, vjust=0.15)+
+  annotate("text", x = 16, y = 0.6,  color='white',size=5,fontface='bold',label = "Talking, Conversation")+
+  geom_segment(aes(x =0  , y =0, xend =17 , yend = 0),size=2,color='hotpink2',alpha=0.08)+
+  theme(axis.text.y = element_blank())+
+  labs(x = "",y = "Average Happiness Score (normalized)")
+
+
 #Time
 weekday_score_df <- data.frame(aggregate(Z_Q1 ~ code*week_day,df,mean))
 period_score_df <- data.frame(aggregate(Z_Q1 ~ code*period,df,mean))
@@ -19,15 +42,15 @@ weekday_score_all_df <- data.frame(aggregate(Z_Q1 ~ week_day,df,mean))
 
 
 ########mean  for perference 
-#mean_df <-data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))
-#x1 <-  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="No",]$Z_Q1
-#x2 <- data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Yes",]$Z_Q1
-#x3 <- data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Not Sure",]$Z_Q1
+mean_df <-data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))
+x1 <-  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="No",]$Z_Q1
+x2 <- data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Yes",]$Z_Q1
+x3 <- data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Not Sure",]$Z_Q1
 preference_p <- ggplot(df_nok, aes(x=Z_Q1, fill=perfer_not)) + geom_histogram(binwidth=.3, alpha=.5, position="identity")+
     scale_fill_discrete(name="Prefer to do something else?")+
-    geom_segment(aes(x =  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="No",]$Z_Q1, y =60, xend = data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="No",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
-    geom_segment(aes(x =  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Yes",]$Z_Q1, y =60, xend = data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Yes",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
-    geom_segment(aes(x =  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Not Sure",]$Z_Q1, y =60, xend = data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Not Sure",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+
+    geom_segment(aes(x =0.3454582  , y =60, xend =0.3454582 , yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
+    geom_segment(aes(x = -0.381628 , y =60, xend =-0.381628, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
+    geom_segment(aes(x = -0.1556725, y =60, xend = -0.1556725, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+
     xlab("Normalized Happiness ( 0 is the average)")
 
 ###################
@@ -89,7 +112,8 @@ shinyServer(function(input, output) {
     p2<- ggplot(na.omit(var_plot()), aes(x=reorder(code,-Q1), y=Q1, fill=to_clr)) + geom_bar(stat="identity")
     out_p2<- p2+scale_fill_manual(values=c("#999999", "#E69F00"), 
                        name="",
-                       breaks=c("FALSE","TRUE"),labels=c("Other Users", "Your Variance"))+theme(axis.text.x = element_blank())+xlab("Users")+ylab("Happinese Score Variance")+
+                       breaks=c("FALSE","TRUE"),labels=c("Other Users", "Your Variance"))+
+                      theme(axis.text.x = element_blank())+xlab("Users")+ylab("Happinese Score Variance")+
                         annotate("text", x = 4.5, y = 31, label = "High Variance",color="#000099",size=6)+ annotate("text", x = 21.7, y = 31, label = "Low Variance", color="brown",size=6)+
                          geom_segment(aes(x = 18.5, y = 30.8, xend = 8, yend = 30.8), arrow = arrow(length = unit(0.3, "cm")),size=1.3)+
                          geom_segment(aes(x = 8, y = 30.8, xend = 18.5, yend = 30.8), arrow = arrow(length = unit(0.3, "cm")),size=1.3 )
@@ -121,6 +145,9 @@ shinyServer(function(input, output) {
   #output$text2<-renderText(names(mean_df))
   #output$text2 <- renderText({names(mean_df)})
   output$preference_hist <- renderPlot(print(preference_p))
+
+
+  output$loc_act_p <- renderPlot(print(loc_act))
   
 
 }) 
