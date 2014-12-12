@@ -35,10 +35,10 @@ shinyUI(
       br(),
       p("X-axis is normalized happiness score with average happiness at 0. Pink bars: people who prefer not to do something else; Blue bars: People who prefer to do something else. Green bars: People who aren't sure..."),
       p("Dotted lines show the average within each group. Intuitively, Pink group is happier than the Blue group. As for the times that are 'not sure', it's left to the 0. So you are slightly unhappy when you are not sure, so.. get up and go do something else :)"),
-	    p("*Note: for your nerds out there, we ran an ANOVA test to compare the means across groups, the means are significantly different, with a <0.005 p value"),
+	  p("*Note: for your nerds out there, we ran an ANOVA test to compare the means across groups, the means are significantly different, with a <0.005 p value"),
 	  br(),
 	  br(),
-	  h4('Happiness Day'),
+	  h4('Happiness Time'),
       plotOutput("Var_Time_Dist"),
       
       p(" **TODO**  ")

@@ -16,17 +16,14 @@ variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
 weekday_score_df <- data.frame(aggregate(Z_Q1 ~ code*week_day,df,mean))
 period_score_df <- data.frame(aggregate(Z_Q1 ~ code*period,df,mean))
 weekday_score_all_df <- data.frame(aggregate(Z_Q1 ~ week_day,df,mean))
+period_score_all_df <- data.frame(aggregate(Z_Q1 ~ period,df,mean))
+
 
 valid_codes <- list(df$code)
 
 #mean
 mean_df <-data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))
-preference_p <- ggplot(df_nok, aes(x=Z_Q1, fill=perfer_not)) + geom_histogram(binwidth=.3, alpha=.5, position="identity")+
-    scale_fill_discrete(name="Prefer to do something else?")+
-    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="No",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="No",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
-    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
-    geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+
-    xlab("Normalized Happiness ( 0 is the average)")
+
 
 
 shinyServer(function(input, output) {
@@ -67,6 +64,10 @@ shinyServer(function(input, output) {
    week_day_all_plot <- reactive({
 	   weekday_score_all_df
    })
+   
+   period_all_plot <- reactive({
+   	   period_score_all_df
+   	   })
 
   
 
@@ -97,27 +98,43 @@ shinyServer(function(input, output) {
   })
   
   output$Var_Time_Dist <- renderPlot({
-	  
-	  if (codename()>1) {
-			p2<- ggplot(na.omit(week_day_plot()), aes(x=reorder(week_day,-Z_Q1), y=Z_Q1, fill=week_day)) + 
-					geom_bar(stat="identity") +
-					labs(x = "Weekday",y = "Happiness Score Normalized",title="Your Happiest Day")
-			p3<- ggplot(na.omit(period_plot()), aes(x=reorder(period,-Z_Q1), y=Z_Q1, fill=period)) + 
-					geom_bar(stat="identity") +
-					labs(x = "Period",y = "Happiness Score Normalized",title="Your Happiest Time of Day")
-			print(grid.arrange(p2,p3,nrow=1))
-	  } else {
-			p2<- ggplot(na.omit(week_day_all_plot()), aes(x=reorder(week_day,-Z_Q1), y=Z_Q1, fill=week_day)) + 
-					geom_bar(stat="identity") +
-					labs(x = "Weekday",y = "Happiness Score Normalized",title="People's Happiest Day") +
-					scale_fill_discrete("Week Day")
-			print(p2)	
-	  }
-	  
-  
+	  p2<- ggplot(na.omit(week_day_all_plot()), aes(x=reorder(week_day,data.frame(list(1,23,4,5,6,7,8))), y=Z_Q1, fill=week_day)) + 
+			geom_bar(stat="identity") +
+			labs(x = "Week Day",y = "Happiness Score Normalized",title="People's Happiest Day of the Week") +
+			scale_fill_discrete("Week Day") +
+			theme(axis.text.x=element_blank())
+	  p3<- ggplot(na.omit(period_all_plot()), aes(x=period, y=Z_Q1, fill=period)) + 
+			geom_bar(stat="identity") +
+			labs(x = "period",y = "Happiness Score Normalized",title="People's Happiest Day of Week") +
+			scale_fill_discrete("Period") +
+			theme(axis.text.x=element_blank())
+  	  if (codename()>1) {
+  			p0<- ggplot(na.omit(week_day_plot()), aes(x=week_day, y=Z_Q1, fill=week_day)) + 
+  					geom_bar(stat="identity") +
+  					labs(x = "Week Day",y = "Happiness Score Normalized",title="Your Happiest Day of the Week")+
+					scale_fill_discrete("Week Day") +
+					theme(axis.text.x=element_blank())
+  			p1<- ggplot(na.omit(period_plot()), aes(x=period, y=Z_Q1, fill=period)) + 
+  					geom_bar(stat="identity") +
+  					labs(x = "Period",y = "Happiness Score Normalized",title="Your Happiest Time of Day")+
+					scale_fill_discrete("Period") +
+					theme(axis.text.x=element_blank())
+  			print(grid.arrange(p0,p1,p2,p3,nrow=2,ncol=2))
+  	  } else {
+	  	  print(grid.arrange(p2,p3,nrow=1,ncol=2))
+  	  }
+
   })
   #output$text2<-renderText(names(mean_df))
-  output$preference_hist <- renderPlot({print(preference_p)})
+  output$preference_hist <- renderPlot({
+	  preference_p <- ggplot(df_nok, aes(x=Z_Q1, fill=perfer_not)) + geom_histogram(binwidth=.3, alpha=.5, position="identity")+
+	      scale_fill_discrete(name="Prefer to do something else?")+
+	      #geom_segment(aes(x =  mean_df[mean_df$perfer_not=="No",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="No",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
+	      #geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Yes",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
+	      #geom_segment(aes(x =  mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, y =60, xend = mean_df[mean_df$perfer_not=="Not Sure",]$Z_Q1, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+
+	      xlab("Normalized Happiness ( 0 is the average)")
+	  print(preference_p)
+  })
   
 
 }) 
