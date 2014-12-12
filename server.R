@@ -24,13 +24,13 @@ variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
 # ");
 # close(mysql)
 ###
-loc_act <- read.csv('loc_act.csv', na.strings = "NULL")
-names(loc_act) <- c('loc','act','user_cnt','response_cnt','avg_Q1')
-loc_act <- ggplot(loc_act, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,label=act)) +
+loc_act_df <- read.csv('loc_act.csv', na.strings = "NULL")
+names(loc_act_df) <- c('loc','act','user_cnt','response_cnt','avg_Q1')
+loc_act <- ggplot(loc_act_df, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,label=act)) +
   geom_bar(stat="identity") + coord_flip()+
   geom_text(color='darkorchid4',size=5,fontface='bold',hjust=-0.4, vjust=0.15)+
-  annotate("text", x = 16, y = 0.6,  color='white',size=5,fontface='bold',label = "Talking, Conversation")+
-  geom_segment(aes(x =0  , y =0, xend =17 , yend = 0),size=2,color='hotpink2',alpha=0.08)+
+  annotate("text", x = 18, y = 0.6,  color='white',size=5,fontface='bold',label = "Talking, Conversation")+
+  geom_segment(aes(x =0  , y =0, xend =18.5 , yend = 0),size=2,color='hotpink2',alpha=0.08)+
   theme(axis.text.y = element_blank())+
   labs(x = "",y = "Average Happiness Score (normalized)")
 
