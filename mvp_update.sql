@@ -101,19 +101,28 @@ SELECT email, count(*) cnt, std(Q1) sd FROM test.mvp  group by 1 having cnt >=5 
 
 
 
+--update: problem with coding:
+SELECT * FROM test.mvp_exported where act='Other' and Q3_other is null;
+/*
+update test.mvp_exported
+set Q3_other=Q2_other
+where act='Other' and Q3_other is null
+*/
+
 
 ---export csv
 ## 
 
 
 use test;
+create table test.mvp_exported as (
 SELECT code, 
  case when hour(date_time)<12 then 'morning' 
-	when hour(date_time) between 12 and 18 then 'afternoon'
+  when hour(date_time) between 12 and 18 then 'afternoon'
    when hour(date_time)>18 then 'evening'  end as period,
  hour(date_time) hr,
  date_time, 
-dayname(date(date_time)) week_day, Q1, Z_Q1, Q2.name location, Q3.name act, Q3.category category, Q4.name perfer_not, Q2_Other,Q3_Other
+dayname(date(date_time)) week_day, Q1, Z_Q1, Q2.name location, Q3.name act, Q3.category category, S.name as act_2nd, Q4.name perfer_not, Q2_Other,Q3_Other
  FROM test.mvp m 
 join 
          Q2
@@ -123,12 +132,16 @@ join
          Q3
 on
    m.Q3_P = Q3.id
+left join
+         Q3 as S
+on
+   m.Q3_S = S.id
 join
          Q4
 on
          m.Q4 = Q4.id
 
-;
+)
 
 
 

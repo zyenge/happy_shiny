@@ -15,7 +15,7 @@ shinyUI(
 
     mainPanel(
       h4('Happiness Score Distribution: You vs. all Users'),
-      #textOutput('oid2'),
+      #textOutput('text2'),
       plotOutput("Q1_Dist"),
       p("*For users with more than 5 responses"),
       p("If your peak is right to the overall users' distribution, you may be happier than most people (in this survey anyway)"),
@@ -39,9 +39,21 @@ shinyUI(
 	  br(),
 	  br(),
 	  h4('Happiness Time'),
+	    br(),
+	     br(),
+	     h4('Happiest Day of Week'),
       plotOutput("Var_Time_Dist"),
-      
-      p(" **TODO**  ")
+      br(),
+      br(),
+      h4("Happiest location + activity combo"),
+      plotOutput("loc_act_p"),
+      p(" **TODO**  "),
+      p(" **Happiest time of the day, happiest place**  "),
+
+
+
+      p("*Note in the end: for the average comparisons above, unless addressed otherwise, we have ran ANOVA tests, the means are different, with a significant p value")
+       
 	  
     )
   )
