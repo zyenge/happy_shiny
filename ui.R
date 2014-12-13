@@ -50,7 +50,7 @@ shinyUI(
       h3("Shopping makes you smile, work does not (surprise, surprise)"),
       h4("Exercising feels better than eating? could it be?... "),
       br(),
-      plotOutput("loc_act_text"),
+      plotOutput("loc_act_text",height=800),
       h5("Top to bottom, from happy to unhappy decsending, blue font means below average unhappy.."),
       br(),
       br(),
@@ -58,7 +58,7 @@ shinyUI(
       h4("If you are slacking off at work, you are way better off chatting with someone than browsing internet. hell, browsing internet is in the negative, it doesn't matter where you are"),
       h4("Exercising tops eating again, talk to my tummy"),
       h4("Stay home and cook people, eating out does not agree with you"),
-      plotOutput("loc_act_p"),
+      plotOutput("loc_act_p",height=600),
       p(" **TODO**  "),
       p(" **Happiest time of the day**  "),
 
