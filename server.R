@@ -3,6 +3,7 @@ library(ggplot2)
 library(grid)
 library(gridExtra) #needed for arrow head
 #library(RODBC)
+library(sqldf)
 
 #setwd('personal/happy_shiny/')
 df <- read.csv('mvp_exported.csv', na.strings = "NULL")
@@ -24,15 +25,58 @@ variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
 # ");
 # close(mysql)
 ###
-loc_act <- read.csv('loc_act.csv', na.strings = "NULL")
-names(loc_act) <- c('loc','act','user_cnt','response_cnt','avg_Q1')
-loc_act <- ggplot(loc_act, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,label=act)) +
+
+loc_act_df <- sqldf("SELECT case when location<>'Other' then location else Q2_Other end as loc,
+case when act<>'Other' then act else Q3_Other end as act,
+ count(distinct code) user_cnt,  count(*) response_cnt, avg(Z_q1) avg_Q1
+FROM df_nok group by 1,2  having user_cnt>=5")
+
+
+best_loc_df <- sqldf("SELECT case when location<>'Other' then location else Q2_Other end as loc,
+                    count(distinct code) user_cnt,  count(*)  response_cnt, avg(Z_q1)  avg_Q1
+                    FROM df_nok group by 1  having user_cnt>=5
+                     order by avg_Q1 desc")
+
+best_act_df <- sqldf("SELECT case when act<>'Other' then act else Q3_Other end as act,
+ count(distinct code) user_cnt,  count(*) response_cnt, avg(Z_q1) avg_Q1 
+FROM df_nok group by 1  having user_cnt>=5
+ order by avg_Q1 desc")
+
+
+######plot######
+loc_act <- ggplot(loc_act_df, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,label=act)) +
   geom_bar(stat="identity") + coord_flip()+
   geom_text(color='darkorchid4',size=5,fontface='bold',hjust=-0.4, vjust=0.15)+
-  annotate("text", x = 16, y = 0.6,  color='white',size=5,fontface='bold',label = "Talking, Conversation")+
-  geom_segment(aes(x =0  , y =0, xend =17 , yend = 0),size=2,color='hotpink2',alpha=0.08)+
+  annotate("text", x = 17, y = 0.6,  color='white',size=5,fontface='bold',label = "Talking, Conversation")+
+  geom_segment(aes(x =0.3  , y =0, xend =17.5 , yend = 0),size=2,color='hotpink2',alpha=0.08)+
+  geom_segment(aes(x = 15.5, y = 0.7, xend = 15.5, yend = 0.65), arrow = arrow(length = unit(0.2, "cm")),size=2,color='red')+
   theme(axis.text.y = element_blank())+
   labs(x = "",y = "Average Happiness Score (normalized)")
+######plot###########
+
+
+
+xy_max=30
+best_plot <- function(attr){
+  best_p <- ggplot() +  theme( axis.text.x = element_blank(), 
+                   axis.text.y = element_blank(),
+                   panel.grid.major = element_blank(), 
+                   panel.grid.minor = element_blank(), 
+                   panel.background = element_rect(fill = "cornsilk2"), 
+                   axis.ticks.length = unit(0, "mm"),
+                   plot.margin = unit(c(1,8,0,0), "lines")) + labs(x=NULL, y=NULL)+
+                  annotate("text", x =0, y = 0, size=0,label = "")+
+                  annotate("text", x =xy_max, y =xy_max, size=0,label = "")
+  if (attr=='loc'){local_df <- best_loc_df} else {local_df <- best_act_df}
+  
+  for (i in 1:nrow(local_df) ) {
+    if (local_df$avg_Q1[i]>=0) {txt_clr='deeppink1';j<-i}
+    else {txt_clr='steelblue4';j<- max(j-1,0)}
+    best_p <- best_p+annotate("text", x = xy_max/2, y = xy_max-i*nrow(local_df), color=txt_clr,size=15-j,label = local_df[attr][i,1])
+  }
+  return(best_p) 
+}
+
 
 
 #Time
@@ -160,8 +204,12 @@ shinyServer(function(input, output) {
   #output$text2<-renderText(names(mean_df))
   #output$text2 <- renderText({names(mean_df)})
   output$preference_hist <- renderPlot(print(preference_p))
-
-
+	
+  output$loc_act_text <- renderPlot({
+    p_act <- best_plot('act')
+    p_loc <- best_plot('loc')
+    print(grid.arrange(p_act,p_loc,nrow=1))
+    })
   output$loc_act_p <- renderPlot(print(loc_act))
   
 

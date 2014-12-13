@@ -109,6 +109,14 @@ set Q3_other=Q2_other
 where act='Other' and Q3_other is null
 */
 
+insert into test.q2
+select 8,"Friends/Family's House"
+
+
+
+update test.mvp_exported
+set location="Friends/Family's House"
+ where location ='other' and Q2_Other like '%house%'
 
 ---export csv
 ## 
