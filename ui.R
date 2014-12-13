@@ -58,7 +58,7 @@ shinyUI(
       h4("If you are slacking off at work, you are way better off chatting with someone than browsing internet. hell, browsing internet is in the negative, it doesn't matter where you are"),
       h4("Exercising tops eating again, talk to my tummy"),
       h4("Stay home and cook people, eating out does not agree with you"),
-      plotOutput("loc_act_p"),
+      plotOutput("loc_act_p",height=600),
       p(" **TODO**  "),
       p(" **Happiest time of the day**  "),
 

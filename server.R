@@ -199,7 +199,6 @@ preference_all_df <- sqldf("
 			having 
 				resp_count >= 5) S1")
 preference_all_df$User <- factor(preference_all_df$User)
->>>>>>> e42fcb775011fbd7e2c31dfc756f0b1bf584cb5a
 
 ###################
 
@@ -350,10 +349,6 @@ shinyServer(function(input, output) {
 						ylab("Happiness Score Normalized")
 	  print(preference_p)
   })
-  #output$text2<-renderText(names(mean_df))
-  #output$text2 <- renderText({names(mean_df)})
-  output$preference_hist <- renderPlot(print(preference_p))
-
   
 	output$loc_act_text <- renderPlot({
 	  p_act <- best_plot(0,'act')
@@ -368,6 +363,8 @@ shinyServer(function(input, output) {
 
 	})
   
+  output$loc_act_p <- renderPlot(print(loc_act))
+
 
 }) 
 
