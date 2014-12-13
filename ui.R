@@ -8,7 +8,9 @@ shinyUI(
 
       sidebarPanel( 
         textInput(inputId="text1", label = "Enter your code here"),
-        submitButton('Submit')
+        actionButton('Submit','Submit'),
+        textOutput("error_test"),
+        textOutput("code_error")
         
                 
     ),

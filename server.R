@@ -27,6 +27,8 @@ variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
 # close(mysql)
 ###
 
+code_list <- sqldf("select distinct code from df")$code
+
 loc_act_df <- sqldf("SELECT case when location<>'Other' then location else Q2_Other end as loc,
 case when act<>'Other' then act else Q3_Other end as act,
  count(distinct code) user_cnt,  count(*) response_cnt, avg(Z_q1) avg_Q1
@@ -168,7 +170,14 @@ shinyServer(function(input, output) {
     input$text1
   	})
   	
-
+  #check codename
+	output$code_error <- renderText({
+	  if (input$Submit == 0) msg<- "" else if ((input$Submit > 0)& !codename() %in% code_list) msg <- "The code you input is not found, please try again" else msg<- ""
+    msg
+	})
+  
+  
+  
 	#Q1 score 
 	Q1_Plot <- reactive({
    #one user 
