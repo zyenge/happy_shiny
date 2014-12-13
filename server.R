@@ -44,6 +44,37 @@ best_act_df <- sqldf("SELECT case when act<>'Other' then act else Q3_Other end a
 FROM df_nok group by 1  having user_cnt>=5
  order by avg_Q1 desc")
 
+person_loc <- sqldf("select b.* from
+                    (select code, count(*) cnt from
+                     (SELECT code, case when location<>'Other' then location else Q2_Other end as loc,
+                      count(*)  response_cnt, avg(Z_q1)  avg_Q1
+                      FROM df group by 1,2  having response_cnt>=5
+                     ) a
+                     group by code
+                     having cnt>1) s
+                    join (SELECT code, case when location<>'Other' then location else Q2_Other end as loc,
+                          count(*)  response_cnt, avg(Z_q1)  avg_Q1
+                          FROM df group by 1,2  having response_cnt>=5
+                    ) b
+                    on s.code=b.code
+                    ")
+
+person_act <- sqldf("select b.* from
+                    (select code, count(*) cnt from
+                     (SELECT code, case when act<>'Other' then act else Q3_Other end as act,
+                      count(*)  response_cnt, avg(Z_q1)  avg_Q1
+                      FROM df group by 1,2  having response_cnt>=5
+                     ) a
+                     group by code
+                     having cnt>1) s
+                    join (SELECT code, case when act<>'Other' then act else Q3_Other end as act,
+                          count(*)  response_cnt, avg(Z_q1)  avg_Q1
+                          FROM df group by 1,2  having response_cnt>=5
+                    ) b
+                    on s.code=b.code
+                    ")
+
+
 
 ######plot######
 loc_act <- ggplot(loc_act_df, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,label=act)) +
@@ -59,7 +90,7 @@ loc_act <- ggplot(loc_act_df, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,labe
 
 
 xy_max=30
-best_plot <- function(attr){
+best_plot <- function(code=0, attr){
   best_p <- ggplot() +  theme( axis.text.x = element_blank(), 
                    axis.text.y = element_blank(),
                    panel.grid.major = element_blank(), 
@@ -69,22 +100,31 @@ best_plot <- function(attr){
                    plot.margin = unit(c(1,1,0,0), "lines")) + labs(x=NULL, y=NULL)+
                   annotate("text", x =0, y = 0, size=0,label = "")+
                   annotate("text", x =xy_max, y =xy_max, size=0,label = "")
-  if (attr=='loc'){local_df <- best_loc_df} else {local_df <- best_act_df}
+  if ((code==0) & (attr=='loc')) {local_df <- best_loc_df} else if ((code==0) & (attr=='act')) {local_df <- best_act_df} 
+  else if ((code %in% person_loc$code) &  (attr=='loc')) {
+    local_df0<-person_loc[person_loc$code==code,]
+    local_df <- local_df0[order(-local_df0$avg_Q1),]}
+  else if ((code %in% person_loc$code) &  (attr=='act')) {
+    local_df0<-person_act[person_act$code==code,]
+    local_df <- local_df0[order(-local_df0$avg_Q1),]}
   
   for (i in 1:nrow(local_df) ) {
     if (local_df$avg_Q1[i]>=0) {txt_clr='deeppink1';j<-i}
     else {txt_clr='steelblue4';j<- max(j-1,0)}
     best_p <- best_p+annotate("text", x = xy_max/2, y = xy_max-i*nrow(local_df), color=txt_clr,size=15-j,label = local_df[attr][i,1])
   }
-  return(best_p) 
+  return(best_p)
 }
 
+
+best_plot(4060,'act')
 
 
 #Time
 weekday_score_df <- data.frame(aggregate(Z_Q1 ~ code*week_day,df,mean))
 period_score_df <- data.frame(aggregate(Z_Q1 ~ code*period,df,mean))
 weekday_score_all_df <- data.frame(aggregate(Z_Q1 ~ week_day,df,mean))
+
 
 
 ########mean  for perference 
@@ -110,7 +150,7 @@ shinyServer(function(input, output) {
   	
   #check codename
 	output$code_error <- renderText({
-	  if (input$Submit == 0) msg<- "" else if ((input$Submit > 0)& !codename() %in% code_list) msg <- "The code you input is not found, please try again" else msg<- ""
+	  if (input$Submit == 0) msg<- "" else if ((input$Submit > 0)& !codename() %in% code_list) msg <- "The code you entered is not found, please try again" else msg<- ""
     msg
 	})
   
@@ -198,13 +238,26 @@ shinyServer(function(input, output) {
   #output$text2<-renderText(names(mean_df))
   #output$text2 <- renderText({names(mean_df)})
   output$preference_hist <- renderPlot(print(preference_p))
-	
-  output$loc_act_text <- renderPlot({
-    p_act <- best_plot('act')
-    p_loc <- best_plot('loc')
-    print(grid.arrange(p_act,p_loc,nrow=1))
-    })
+
+  
+	output$loc_act_text <- renderPlot({
+	  p_act <- best_plot(0,'act')
+	  p_loc <- best_plot(0,'loc')
+	  if ((codename() %in% person_loc$code)) {per_loc <- best_plot(codename(),'loc')}
+	  if ((codename() %in% person_act$code)) {per_act <- best_plot(codename(),'act')}
+    
+    if (!(codename() %in% person_act$code) & (!codename() %in% person_loc$code)) {grid.arrange(p_act,p_loc,nrow=1)}
+    else if ((codename() %in% person_act$code) & (!codename() %in% person_loc$code)) {grid.arrange(p_act,p_loc, per_act,nrow=2)}
+    else if (!(codename() %in% person_act$code) & (codename() %in% person_loc$code)){grid.arrange(p_act,p_loc, per_loc,nrow=2)}
+	  else if ((codename() %in% person_act$code) & (codename() %in% person_loc$code)){grid.arrange(p_act,p_loc,per_act,per_loc,nrow=2)}
+
+	})
+  
+  
+    
+    
   output$loc_act_p <- renderPlot(print(loc_act))
   
 
 }) 
+

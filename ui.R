@@ -46,7 +46,7 @@ shinyUI(
       h3("Shopping makes you smile, work does not (surprise, surprise)"),
       h4("Exercising feels better than eating? could it be?... "),
       br(),
-      plotOutput("loc_act_text"),
+      plotOutput("loc_act_text",height=800),
       h5("Top to bottom, from happy to unhappy decsending, blue font means below average unhappy.."),
       br(),
       br(),
