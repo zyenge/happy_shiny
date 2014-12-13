@@ -4,6 +4,7 @@ library(grid)
 library(gridExtra) #needed for arrow head
 #library(RODBC)
 library(sqldf)
+library(plyr)
 
 #setwd('personal/happy_shiny/')
 df <- read.csv('mvp_exported.csv', na.strings = "NULL")
@@ -111,7 +112,7 @@ best_plot <- function(code=0, attr){
   for (i in 1:nrow(local_df) ) {
     if (local_df$avg_Q1[i]>=0) {txt_clr='deeppink1';j<-i}
     else {txt_clr='steelblue4';j<- max(j-1,0)}
-    best_p <- best_p+annotate("text", x = xy_max/2, y = xy_max-i*nrow(local_df), color=txt_clr,size=15-j,label = local_df[attr][i,1])
+    best_p <- best_p+annotate("text", x = xy_max/2, y = xy_max-i*nrow(local_df), color=txt_clr,size=12-j,label = local_df[attr][i,1])
   }
   return(best_p)
 }
@@ -121,23 +122,84 @@ best_plot(4060,'act')
 
 
 #Time
-weekday_score_df <- data.frame(aggregate(Z_Q1 ~ code*week_day,df,mean))
-period_score_df <- data.frame(aggregate(Z_Q1 ~ code*period,df,mean))
-weekday_score_all_df <- data.frame(aggregate(Z_Q1 ~ week_day,df,mean))
+day_labels <- c('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')
+day_labels_short <- c("Sun","Mon","Tue","Wed","Thu","Fri","Sat")
+period_labels <- c('morning','afternoon','evening')
+
+weekday_score_df <- sqldf("
+		SELECT 
+			code,
+			week_day,
+ 		   	avg(Z_q1) Z_Q1,
+			count(*) resp_count
+		FROM 
+			df 
+		Group By code,week_day
+		having resp_count>=5
+ 	    ")
+period_score_df <- sqldf("
+		SELECT 
+			code,
+			period,
+ 		   	avg(Z_q1) Z_Q1,
+			count(*) resp_count
+			
+		FROM 
+			df 
+		Group By code,period  
+		having resp_count >=5
+ 	    ")
+
+weekday_score_all_df <- sqldf("
+		SELECT 
+			week_day,
+ 		   	avg(Z_q1) Z_Q1 
+		FROM 
+			df_nok 
+		Group By week_day  
+ 	    ")
+
+period_score_all_df <- sqldf("
+		SELECT 
+			period,
+ 		   	avg(Z_q1) Z_Q1 
+		FROM 
+			df_nok 
+		Group By period  
+ 	    ")
 
 
 
-########mean  for perference 
-mean_df <-data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))
-x1 <-  data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="No",]$Z_Q1
-x2 <- data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Yes",]$Z_Q1
-x3 <- data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))[data.frame(aggregate(Z_Q1 ~ perfer_not, df_nok, mean))$perfer_not=="Not Sure",]$Z_Q1
-preference_p <- ggplot(df_nok, aes(x=Z_Q1, fill=perfer_not)) + geom_histogram(binwidth=.3, alpha=.5, position="identity")+
-    scale_fill_discrete(name="Prefer to do something else?")+
-    geom_segment(aes(x =0.3454582  , y =60, xend =0.3454582 , yend = 0),linetype="dashed",size=1,color='pink',alpha=.7)+    
-    geom_segment(aes(x = -0.381628 , y =60, xend =-0.381628, yend = 0),linetype="dashed",size=1,color='lightblue',alpha=.7)+
-    geom_segment(aes(x = -0.1556725, y =60, xend = -0.1556725, yend = 0),linetype="dashed",size=1,color='forestgreen',alpha=.7)+
-    xlab("Normalized Happiness ( 0 is the average)")
+################### preference 
+preference_all_df <- sqldf("
+		SELECT
+			User,
+			perfer_not,
+			Z_Q1
+		FROM
+			(SELECT
+				0 as User,
+				perfer_not,
+				avg(Z_Q1) Z_Q1,
+				count(*) resp_count
+			from
+				df_nok		
+			group by
+				perfer_not
+			Union
+			SELECT
+				code as User,
+				perfer_not,
+				avg(Z_Q1) Z_Q1,
+				count(*) resp_count
+			from
+				df		
+			group by
+				code,perfer_not
+			having 
+				resp_count >= 5) S1")
+preference_all_df$User <- factor(preference_all_df$User)
+>>>>>>> e42fcb775011fbd7e2c31dfc756f0b1bf584cb5a
 
 ###################
 
@@ -185,8 +247,19 @@ shinyServer(function(input, output) {
    week_day_all_plot <- reactive({
 	   weekday_score_all_df
    })
-
-  
+   
+   period_all_plot <- reactive({
+   	   period_score_all_df
+   	   })
+   
+   #preference
+   sub_preference_df <- reactive({
+		 	  sub_preference_df <- subset(preference_all_df, User %in% c(0,codename()),select=c(User,perfer_not,Z_Q1))
+			  
+	  	   	  sub_preference_df$to_clr<- sub_preference_df$User==codename()
+			  
+			  sub_preference_df
+	   })
 
 
   output$Q1_Dist <- renderPlot({
@@ -217,23 +290,65 @@ shinyServer(function(input, output) {
   
   output$Var_Time_Dist <- renderPlot({
 	  
-	  if (codename()>1) {
-			p2<- ggplot(na.omit(week_day_plot()), aes(x=reorder(week_day,-Z_Q1), y=Z_Q1, fill=week_day)) + 
+	  week_day_all_plot <- week_day_all_plot()
+	  week_day_all_plot$week_day <- factor(week_day_all_plot$week_day,levels = day_labels)
+	  week_day_all_p <- ggplot(na.omit(week_day_all_plot), aes(x=week_day,y=Z_Q1,fill=week_day)) + 
+			scale_y_continuous(limits = c(-1, 1)) +
+	 		theme(axis.text.x=element_text(color = "black", angle=0)) +
+			geom_bar(stat="identity") +
+			scale_fill_discrete("Week Day") +
+			labs(x = "Week Day",y = "Happiness Score Normalized",title="People's Happiest Day of the Week") +
+		    scale_x_discrete(labels=day_labels_short)
+	
+	  period_all_plot <- period_all_plot()
+	  period_all_plot$period <- factor(period_all_plot$period,levels = period_labels) 
+	  period_all_p<- ggplot(na.omit(period_all_plot), aes(x=period, y=Z_Q1, fill=period)) + 
+			scale_y_continuous(limits = c(-1, 1)) +
+	  		theme(axis.text.x=element_text(color = "black", angle=0)) +
+			geom_bar(stat="identity") +
+			labs(x = "Period",y = "Happiness Score Normalized",title="People's Happiest Day of Week") +
+			scale_fill_discrete("Period") +
+		    scale_x_discrete(labels=period_labels)
+			
+			
+  	  if (codename() %in% code_list) {
+		    week_day_plot <- week_day_plot()
+			week_day_plot$week_day <- factor(week_day_plot$week_day,levels=day_labels)
+  			week_day_user_p<- ggplot(na.omit(week_day_plot), aes(x=week_day, y=Z_Q1, fill=week_day)) + 
+					scale_y_continuous(limits = c(-1.2, 1.2)) +
+					theme(axis.text.x=element_blank())+ 
 					geom_bar(stat="identity") +
-					labs(x = "Weekday",y = "Happiness Score Normalized",title="Your Happiest Day")
-			p3<- ggplot(na.omit(period_plot()), aes(x=reorder(period,-Z_Q1), y=Z_Q1, fill=period)) + 
-					geom_bar(stat="identity") +
-					labs(x = "Period",y = "Happiness Score Normalized",title="Your Happiest Time of Day")
-			print(grid.arrange(p2,p3,nrow=1))
-	  } else {
-			p2<- ggplot(na.omit(week_day_all_plot()), aes(x=reorder(week_day,-Z_Q1), y=Z_Q1, fill=week_day)) + 
-					geom_bar(stat="identity") +
-					labs(x = "Weekday",y = "Happiness Score Normalized",title="People's Happiest Day") +
-					scale_fill_discrete("Week Day")
-			print(p2)	
-	  }
-	  
-  
+  					labs(x = "Week Day",y = "Happiness Score Normalized",title="Your Happiest Day of the Week")+
+					scale_fill_discrete("Week Day") 
+					#+ scale_x_discrete(labels=day_labels_short)
+
+    	  	
+			period_plot <- period_plot()
+			period_plot$period <- factor(period_plot$period,levels = period_labels) 	
+  			period_user_p<- ggplot(na.omit(period_plot), aes(x=period, y=Z_Q1, fill=period)) + 
+					scale_y_continuous(limits = c(-1, 1)) +
+					theme(axis.text.x=element_blank())+ 
+  					geom_bar(stat="identity") +
+  					labs(x = "Period",y = "Happiness Score Normalized",title="Your Happiest Time of Day")+
+					scale_fill_discrete("Period")  #+ scale_x_discrete(labels=period_labels)
+					
+  			print(grid.arrange(week_day_user_p,period_user_p,week_day_all_p,period_all_p,nrow=2,ncol=2))
+  	  } else {
+	  	  print(grid.arrange(week_day_all_p,period_all_p,nrow=1,ncol=2))
+  	  }
+
+  })
+
+  output$preference_hist <- renderPlot({
+	  preference_p <- ggplot(na.omit(sub_preference_df()), aes(x=perfer_not, y =Z_Q1,fill=to_clr)) + 
+	  					scale_fill_manual(values=c("#999999", "#E69F00"), 
+	                         name="",
+	                         breaks=c("FALSE","TRUE"),
+							 labels=c("Other Users", "Your Variance")) +
+	  					geom_bar(stat="identity",position="dodge") +
+	  					xlab("Would you rather be doing something other than what you're doing right now?") + 
+						ylab("Happiness Score Normalized")
+	  print(preference_p)
   })
   #output$text2<-renderText(names(mean_df))
   #output$text2 <- renderText({names(mean_df)})
@@ -252,11 +367,6 @@ shinyServer(function(input, output) {
 	  else if ((codename() %in% person_act$code) & (codename() %in% person_loc$code)){grid.arrange(p_act,p_loc,per_act,per_loc,nrow=2)}
 
 	})
-  
-  
-    
-    
-  output$loc_act_p <- renderPlot(print(loc_act))
   
 
 }) 
