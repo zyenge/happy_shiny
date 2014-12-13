@@ -26,6 +26,8 @@ variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
 # close(mysql)
 ###
 
+code_list <- sqldf("select distinct code from df")$code
+
 loc_act_df <- sqldf("SELECT case when location<>'Other' then location else Q2_Other end as loc,
 case when act<>'Other' then act else Q3_Other end as act,
  count(distinct code) user_cnt,  count(*) response_cnt, avg(Z_q1) avg_Q1
@@ -64,7 +66,7 @@ best_plot <- function(attr){
                    panel.grid.minor = element_blank(), 
                    panel.background = element_rect(fill = "cornsilk2"), 
                    axis.ticks.length = unit(0, "mm"),
-                   plot.margin = unit(c(1,8,0,0), "lines")) + labs(x=NULL, y=NULL)+
+                   plot.margin = unit(c(1,1,0,0), "lines")) + labs(x=NULL, y=NULL)+
                   annotate("text", x =0, y = 0, size=0,label = "")+
                   annotate("text", x =xy_max, y =xy_max, size=0,label = "")
   if (attr=='loc'){local_df <- best_loc_df} else {local_df <- best_act_df}
@@ -106,7 +108,14 @@ shinyServer(function(input, output) {
     input$text1
   	})
   	
-
+  #check codename
+	output$code_error <- renderText({
+	  if (input$Submit == 0) msg<- "" else if ((input$Submit > 0)& !codename() %in% code_list) msg <- "The code you input is not found, please try again" else msg<- ""
+    msg
+	})
+  
+  
+  
 	#Q1 score 
 	Q1_Plot <- reactive({
    #one user 
