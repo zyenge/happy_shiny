@@ -271,7 +271,7 @@ shinyServer(function(input, output) {
 		    scale_x_discrete(labels=period_labels)
 			
 			
-  	  if (codename()>1) {
+  	  if (codename() %in% code_list) {
 		    week_day_plot <- week_day_plot()
 			week_day_plot$week_day <- factor(week_day_plot$week_day,levels=day_labels)
   			week_day_user_p<- ggplot(na.omit(week_day_plot), aes(x=week_day, y=Z_Q1, fill=week_day)) + 
