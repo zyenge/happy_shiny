@@ -36,7 +36,10 @@ person_summary_df <- sqldf("
 			round(avg(Q1),2) as avg_Q1,
 			round(stdev(Q1),2) as std_Q1,
 			min(Q1) as min_Q1,
-			max(Q1) as max_Q1
+			max(Q1) as max_Q1,
+			median(Q1) as median_Q1,
+			lower_quartile(Q1) as lower_quartile_Q1,
+			upper_quartile(Q1) as upper_quartile_Q1
  		FROM
 			df
 		GROUP BY
@@ -238,18 +241,26 @@ shinyServer(function(input, output) {
 				avg(avg_Q1) as 'Average Happiness',
 				avg(std_Q1) as 'Average Happiness Stdev',
 				min(min_Q1) as 'Lowest Reported Score',
-				max(max_Q1) as 'Highest Reported Score'
+				max(max_Q1) as 'Highest Reported Score',
+				avg(lower_quartile_Q1) as 'Average Lower Quartile',
+				avg(median_Q1) as 'Average Median Score',
+				avg(upper_quartile_Q1) as 'Average Upper Quartile'
 			FROM
 				person_summary_df
+			WHERE
+				code != 4060
 			Union
 			SELECT
 				code as 'Group',
 				count(distinct code) as 'Unique Responders',
 				sum(responses) as 'Total Responses',
-				avg(avg_Q1) as 'Average Happiness',
-				avg(std_Q1) as 'Average Happiness Stdev',
-				min(min_Q1) as 'Lowest Reported Score',
-				max(max_Q1) as 'Highest Reported Score'
+				avg_Q1 as 'Average Happiness',
+				std_Q1 as 'Average Happiness Stdev',
+				min_Q1 as 'Lowest Reported Score',
+				max_Q1 as 'Highest Reported Score',
+				lower_quartile_Q1 as 'Average Lower Quartile',
+				median_Q1 as 'Average Median Score',
+				upper_quartile_Q1 as 'Average Upper Quartile'
 			FROM
 				person_summary_df
 			GROUP BY
@@ -313,10 +324,12 @@ shinyServer(function(input, output) {
 
 
   output$Q1_Dist <- renderPlot({
+	
+	means <- ddply(Q1_Plot(), "code", summarise, Q1.mean=mean(Q1))
   	
     
     p1<-ggplot(Q1_Plot() , aes(Q1, fill = code)) + geom_density(color="grey" ,alpha = 0.6)+
-        xlab("Happiness Score 1~100") + ylab("Density")
+        xlab("Happiness Score 1~100") + ylab("Density") + geom_vline(data=means, aes(xintercept=Q1.mean,  color=code),linetype="dashed", size=1)
 
     print(p1)
 	
