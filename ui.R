@@ -16,8 +16,10 @@ shinyUI(
     ),
 
     mainPanel(
+	  h3('Happiness Survey Summary Statistics'),
+  	  tableOutput("summary_table"),
+		
       h3('Happiness Score Distribution: You vs. all Users'),
-      #textOutput('text2'),
       plotOutput("Q1_Dist"),
       p("*For users with more than 5 responses"),
       p("If your peak is right to the overall users' distribution, you may be happier than most people (in this survey anyway)"),

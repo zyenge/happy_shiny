@@ -29,6 +29,19 @@ variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
 
 code_list <- sqldf("select distinct code from df")$code
 
+person_summary_df <- sqldf("
+		SELECT
+			code,
+			count(*) as responses,
+			round(avg(Q1),2) as avg_Q1,
+			round(stdev(Q1),2) as std_Q1,
+			min(Q1) as min_Q1,
+			max(Q1) as max_Q1
+ 		FROM
+			df
+		GROUP BY
+			code")
+
 loc_act_df <- sqldf("SELECT case when location<>'Other' then location else Q2_Other end as loc,
 case when act<>'Other' then act else Q3_Other end as act,
  count(distinct code) user_cnt,  count(*) response_cnt, avg(Z_q1) avg_Q1
@@ -215,6 +228,44 @@ shinyServer(function(input, output) {
     msg
 	})
   
+  
+  	this_person_summary_df <- reactive ({
+		summary_df <- sqldf("
+			SELECT
+				'All' as 'Group',
+				count(distinct code) as 'Unique Responders',
+				sum(responses) as 'Total Responses',
+				avg(avg_Q1) as 'Average Happiness',
+				avg(std_Q1) as 'Average Happiness Stdev',
+				min(min_Q1) as 'Lowest Reported Score',
+				max(max_Q1) as 'Highest Reported Score'
+			FROM
+				person_summary_df
+			Union
+			SELECT
+				code as 'Group',
+				count(distinct code) as 'Unique Responders',
+				sum(responses) as 'Total Responses',
+				avg(avg_Q1) as 'Average Happiness',
+				avg(std_Q1) as 'Average Happiness Stdev',
+				min(min_Q1) as 'Lowest Reported Score',
+				max(max_Q1) as 'Highest Reported Score'
+			FROM
+				person_summary_df
+			GROUP BY
+				code")
+		
+		summary_df$Group <- factor(summary_df$Group)
+		if (codename() %in% code_list)
+			sub_summary_df <- subset(summary_df, Group %in% c('All',codename()))
+		else 
+			sub_summary_df <- subset(summary_df, Group %in% c('All'))
+		sub_summary_df
+	})
+	
+	output$summary_table <- renderTable({
+	  this_person_summary_df()
+	})
   
   
 	#Q1 score 
