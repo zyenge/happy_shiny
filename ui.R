@@ -1,7 +1,7 @@
 shinyUI(
-
+  
   fluidPage(
-
+    tags$head(includeScript("google-analytics.js")),
     titlePanel("Happiness Report"),
 
     sidebarLayout(
@@ -55,7 +55,7 @@ shinyUI(
       h3("Shopping makes you smile, work does not (surprise, surprise)"),
       h4("Exercising feels better than eating? could it be?... "),
       br(),
-      plotOutput("loc_act_text",height=550),
+      plotOutput("loc_act_text",height=500),
       h5("Top to bottom, from happy to unhappy decsending, blue font means below average unhappy.."),
       br(),
       br(),
