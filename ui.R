@@ -18,7 +18,8 @@ shinyUI(
     mainPanel(
 	  h3('Happiness Survey Summary Statistics'),
   	  tableOutput("summary_table"),
-		
+	  br(),
+	  p("'Average Respondent'(AR) responded about 20 times to our emails. We sent around 65 emails to each user, so this is an average response rate slightly under 33%, or 1 out of every 3 emails. AR has an average happiness score of 68.65, with a standard deviation of 8.84. AR's median score is 69; observing the Lower/Upper quartile, we know that 50% of AR's responses fell between 63 and 74. Something interesting here: AR can supply a score between 1 and 100, but AR's minimum score = 50, and AR's maximum score = 81. This means most people don't use the entire range (1-100). "),
       h3('Happiness Score Distribution: You vs. all Users'),
       plotOutput("Q1_Dist"),
       p("*For users with more than 5 responses"),

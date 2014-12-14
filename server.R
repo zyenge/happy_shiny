@@ -234,58 +234,59 @@ shinyServer(function(input, output) {
   
   	this_person_summary_df <- reactive ({
 		summary_df <- sqldf("
-			SELECT
-				'All' as 'Group',
-				count(distinct code) as 'Unique Responders',
-				sum(responses) as 'Total Responses',
-				avg(avg_Q1) as 'Average Happiness',
-				avg(std_Q1) as 'Average Happiness Stdev',
-				min(min_Q1) as 'Lowest Reported Score',
-				max(max_Q1) as 'Highest Reported Score',
-				avg(lower_quartile_Q1) as 'Average Lower Quartile',
-				avg(median_Q1) as 'Average Median Score',
-				avg(upper_quartile_Q1) as 'Average Upper Quartile'
-			FROM
-				person_summary_df
-			WHERE
-				code != 4060
-			Union
-			SELECT
-				code as 'Group',
-				count(distinct code) as 'Unique Responders',
-				sum(responses) as 'Total Responses',
-				avg_Q1 as 'Average Happiness',
-				std_Q1 as 'Average Happiness Stdev',
-				min_Q1 as 'Lowest Reported Score',
-				max_Q1 as 'Highest Reported Score',
-				lower_quartile_Q1 as 'Average Lower Quartile',
-				median_Q1 as 'Average Median Score',
-				upper_quartile_Q1 as 'Average Upper Quartile'
-			FROM
-				person_summary_df
-			GROUP BY
-				code")
+		SELECT
+			'Average Respondent' as 'Person',
+			sum(responses)/count(distinct code) as 'Responses',
+			avg(avg_Q1) as 'Happiness Average',
+			avg(std_Q1) as 'Happiness Stdev',
+			avg(min_Q1) as 'Minimum Score',
+			avg(max_Q1) as 'Maximum Score',
+			avg(lower_quartile_Q1) as 'Lower Quartile',
+			avg(median_Q1) as 'Median Score',
+			avg(upper_quartile_Q1) as 'Upper Quartile'
+		FROM
+			person_summary_df
+		WHERE
+			code != 4060
+		Union
+		SELECT
+			code as 'Person',
+			responses as 'Responses',
+			avg_Q1 as 'Happiness Average',
+			std_Q1 as 'Happiness Stdev',
+			min_Q1 as 'Minimum Score',
+			max_Q1 as 'Maximum Score',
+			lower_quartile_Q1 as 'Lower Quartile',
+			median_Q1 as 'Median Score',
+			upper_quartile_Q1 as 'Upper Quartile'
+		FROM
+			person_summary_df
+		GROUP BY
+			code")
 		
-		summary_df$Group <- factor(summary_df$Group)
+		summary_df$Person <- factor(summary_df$Person)
 		if (codename() %in% code_list)
-			sub_summary_df <- subset(summary_df, Group %in% c('All',codename()))
+			sub_summary_df <- subset(summary_df, Person %in% c('Average Respondent',codename()))
 		else 
-			sub_summary_df <- subset(summary_df, Group %in% c('All'))
-		sub_summary_df
+			sub_summary_df <- subset(summary_df, Person %in% c('Average Respondent'))
+		sub_summary_df 
 	})
 	
 	output$summary_table <- renderTable({
 	  this_person_summary_df()
-	})
+	},include.rownames=FALSE)
   
   
 	#Q1 score 
 	Q1_Plot <- reactive({
-   #one user 
-    Q1_p <- subset(df, code==codename(), select=c(Q1,code))
-	 Q1_p$code<- factor(Q1_p$code)
-	 Q1_personal <- rbind(Q1_p, Q1_dist)
-   
+	     #one user 
+	     Q1_p <- subset(df, code==codename(), select=c(Q1,code))
+		 Q1_p$code<- factor(Q1_p$code)
+		 #Q1_p$to_clr <- Q1_p$code ==codename()
+		 Q1_dist_gen <- data.frame(Q1=rnorm(n=100000,mean=68.5,sd=8.85),code='All')
+		 Q1_personal <- rbind(Q1_p, Q1_dist_gen)
+		 Q1_personal$to_clr <- Q1_personal$code ==codename()
+		 Q1_personal
   	})
 	
 	#Q1 variance
@@ -315,22 +316,27 @@ shinyServer(function(input, output) {
    
    #preference
    sub_preference_df <- reactive({
-		 	  sub_preference_df <- subset(preference_all_df, User %in% c(0,codename()),select=c(User,perfer_not,Z_Q1))
-			  
-	  	   	  sub_preference_df$to_clr<- sub_preference_df$User==codename()
-			  
-			  sub_preference_df
+	 	  sub_preference_df <- subset(preference_all_df, User %in% c(0,codename()),select=c(User,perfer_not,Z_Q1))
+  	   	  sub_preference_df$to_clr<- sub_preference_df$User==codename()
+		  sub_preference_df
 	   })
 
 
   output$Q1_Dist <- renderPlot({
 	
 	means <- ddply(Q1_Plot(), "code", summarise, Q1.mean=mean(Q1))
-  	
-    
-    p1<-ggplot(Q1_Plot() , aes(Q1, fill = code)) + geom_density(color="grey" ,alpha = 0.6)+
-        xlab("Happiness Score 1~100") + ylab("Density") + geom_vline(data=means, aes(xintercept=Q1.mean,  color=code),linetype="dashed", size=1)
-
+	
+	means$to_clr <- means$code==codename()
+	p1<-ggplot(Q1_Plot() , aes(Q1, fill = to_clr)) + 
+					scale_x_continuous(limit=c(1,100)) + 
+					geom_density(color="grey" ,alpha = 0.6)+
+	        		xlab("Self Reported Happiness Score (1-100)") + ylab("Density of Responses") + 
+					geom_vline(data=means, aes(xintercept=Q1.mean,fill=to_clr), size=1) +
+					scale_fill_manual(values=c("#999999", "#E69F00"), 
+	                     name="",
+	                     breaks=c("FALSE","TRUE"),
+						 labels=c("Average User", "You"))
+	
     print(p1)
 	
   })
