@@ -9,8 +9,12 @@ shinyUI(
       sidebarPanel( 
         textInput(inputId="text1", label = "Enter your code here"),
         actionButton('Submit','Submit'),
-        textOutput("error_test"),
-        textOutput("code_error")
+        textOutput("code_error"),
+        h4(textOutput("hello")),
+        h5(textOutput("per_act")),
+        br(),
+        h5(textOutput("per_loc"))
+
         
                 
     ),
@@ -18,7 +22,6 @@ shinyUI(
     mainPanel(
 	  h3('Happiness Survey Summary Statistics'),
   	  tableOutput("summary_table"),
-		
       h3('Happiness Score Distribution: You vs. all Users'),
       plotOutput("Q1_Dist"),
       p("*For users with more than 5 responses"),
@@ -52,7 +55,7 @@ shinyUI(
       h3("Shopping makes you smile, work does not (surprise, surprise)"),
       h4("Exercising feels better than eating? could it be?... "),
       br(),
-      plotOutput("loc_act_text",height=800),
+      plotOutput("loc_act_text",height=550),
       h5("Top to bottom, from happy to unhappy decsending, blue font means below average unhappy.."),
       br(),
       br(),

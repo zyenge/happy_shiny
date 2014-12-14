@@ -107,7 +107,7 @@ loc_act <- ggplot(loc_act_df, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,labe
 
 
 xy_max=30
-best_plot <- function(code=0, attr){
+best_plot <- function(attr){
   best_p <- ggplot() +  theme( axis.text.x = element_blank(), 
                    axis.text.y = element_blank(),
                    panel.grid.major = element_blank(), 
@@ -117,14 +117,7 @@ best_plot <- function(code=0, attr){
                    plot.margin = unit(c(1,1,0,0), "lines")) + labs(x=NULL, y=NULL)+
                   annotate("text", x =0, y = 0, size=0,label = "")+
                   annotate("text", x =xy_max, y =xy_max, size=0,label = "")
-  if ((code==0) & (attr=='loc')) {local_df <- best_loc_df} else if ((code==0) & (attr=='act')) {local_df <- best_act_df} 
-  else if ((code %in% person_loc$code) &  (attr=='loc')) {
-    local_df0<-person_loc[person_loc$code==code,]
-    local_df <- local_df0[order(-local_df0$avg_Q1),]}
-  else if ((code %in% person_loc$code) &  (attr=='act')) {
-    local_df0<-person_act[person_act$code==code,]
-    local_df <- local_df0[order(-local_df0$avg_Q1),]}
-  
+  if (attr=='loc') {local_df <- best_loc_df} else if (attr=='act') {local_df <- best_act_df} 
   for (i in 1:nrow(local_df) ) {
     if (local_df$avg_Q1[i]>=0) {txt_clr='deeppink1';j<-i}
     else {txt_clr='steelblue4';j<- max(j-1,0)}
@@ -134,8 +127,24 @@ best_plot <- function(code=0, attr){
 }
 
 
-best_plot(4060,'act')
-
+personal_pref <- function(code, attr){
+  if ((code %in% person_loc$code) &  (attr=='loc')) {
+  local_df<-person_loc[person_loc$code==code,] 
+  #local_df<-person_loc[person_loc$code==19567,] 
+  #max_num <- max(local_df$avg_Q1)
+  #as.character(local_df[local_df$avg_Q1==max_num,]['loc'][1,])
+  
+  }
+  else if ((code %in% person_loc$code) &  (attr=='act')) {
+  local_df<-person_act[person_act$code==code,]
+  }
+  max_num <- max(local_df$avg_Q1)
+  min_num <- min(local_df$avg_Q1)
+  most_hp <- as.character(local_df[local_df$avg_Q1==max_num,][attr][1,])
+  least_hp <- as.character(local_df[local_df$avg_Q1==min_num,][attr][1,])   
+  
+  return (c(most_hp, least_hp))
+}
 
 #Time
 day_labels <- c('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')
@@ -415,19 +424,34 @@ shinyServer(function(input, output) {
   })
   
 	output$loc_act_text <- renderPlot({
-	  p_act <- best_plot(0,'act')
-	  p_loc <- best_plot(0,'loc')
-	  if ((codename() %in% person_loc$code)) {per_loc <- best_plot(codename(),'loc')}
-	  if ((codename() %in% person_act$code)) {per_act <- best_plot(codename(),'act')}
-    
-    if (!(codename() %in% person_act$code) & (!codename() %in% person_loc$code)) {grid.arrange(p_act,p_loc,nrow=1)}
-    else if ((codename() %in% person_act$code) & (!codename() %in% person_loc$code)) {grid.arrange(p_act,p_loc, per_act,nrow=2)}
-    else if (!(codename() %in% person_act$code) & (codename() %in% person_loc$code)){grid.arrange(p_act,p_loc, per_loc,nrow=2)}
-	  else if ((codename() %in% person_act$code) & (codename() %in% person_loc$code)){grid.arrange(p_act,p_loc,per_act,per_loc,nrow=2)}
+	  p_act <- best_plot('act')
+	  p_loc <- best_plot('loc')
+    grid.arrange(p_act,p_loc,nrow=1)
 
 	})
   
   output$loc_act_p <- renderPlot(print(loc_act))
+
+
+  output$hello <- renderText({
+    if (codename() %in% code_list){
+      paste("Hello,", codename()) 
+    }
+    else ""
+  })
+  
+	output$per_loc <- renderText({
+    if (codename() %in% person_loc$code){
+    paste("You are happier at",personal_pref(codename(),'loc')[1],"than at",personal_pref(codename(),'loc')[2])
+    }
+    else ""
+	})
+	output$per_act <- renderText({
+    if (codename() %in% person_act$code){
+      paste("You are happier",personal_pref(codename(),'act')[1],"than",personal_pref(codename(),'act')[2])
+    }
+    else ""
+    })
 
 
 }) 
