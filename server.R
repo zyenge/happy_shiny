@@ -98,8 +98,8 @@ loc_act <- ggplot(loc_act_df, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,labe
   geom_bar(stat="identity") + coord_flip()+
   geom_text(color='darkorchid4',size=5,fontface='bold',hjust=-0.4, vjust=0.15)+
   annotate("text", x = 17, y = 0.6,  color='white',size=5,fontface='bold',label = "Talking, Conversation")+
-  geom_segment(aes(x =0.3  , y =0, xend =17.5 , yend = 0),size=2,color='hotpink2',alpha=0.08)+
-  geom_segment(aes(x = 15.5, y = 0.7, xend = 15.5, yend = 0.65), arrow = arrow(length = unit(0.2, "cm")),size=2,color='red')+
+  geom_segment(aes(x =0.3  , y =0, xend =17.5 , yend = 0),size=1,color='hotpink2',alpha=0.08)+
+  #geom_segment(aes(x = 15.5, y = 0.7, xend = 15.5, yend = 0.65), arrow = arrow(length = unit(0.2, "cm")),size=2,color='red')+
   theme(axis.text.y = element_blank())+
   labs(x = "",y = "Average Happiness Score (normalized)")
 ######plot###########
@@ -107,7 +107,7 @@ loc_act <- ggplot(loc_act_df, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,labe
 
 
 xy_max=30
-best_plot <- function(attr){
+best_plot <- function(attr,p_title){
   best_p <- ggplot() +  theme( axis.text.x = element_blank(), 
                    axis.text.y = element_blank(),
                    panel.grid.major = element_blank(), 
@@ -116,7 +116,8 @@ best_plot <- function(attr){
                    axis.ticks.length = unit(0, "mm"),
                    plot.margin = unit(c(1,1,0,0), "lines")) + labs(x=NULL, y=NULL)+
                   annotate("text", x =0, y = 0, size=0,label = "")+
-                  annotate("text", x =xy_max, y =xy_max, size=0,label = "")
+                  annotate("text", x =xy_max, y =xy_max, size=0,label = "") +
+				  labs(title=p_title)
   if (attr=='loc') {local_df <- best_loc_df} else if (attr=='act') {local_df <- best_act_df} 
   for (i in 1:nrow(local_df) ) {
     if (local_df$avg_Q1[i]>=0) {txt_clr='deeppink1';j<-i}
@@ -246,8 +247,8 @@ shinyServer(function(input, output) {
 		SELECT
 			'Average Respondent' as 'Person',
 			sum(responses)/count(distinct code) as 'Responses',
-			avg(avg_Q1) as 'Happiness Average',
-			avg(std_Q1) as 'Happiness Stdev',
+			round(avg(avg_Q1),1) as 'Happiness Average',
+			round(avg(std_Q1),1) as 'Happiness Stdev',
 			avg(min_Q1) as 'Minimum Score',
 			avg(max_Q1) as 'Maximum Score',
 			avg(lower_quartile_Q1) as 'Lower Quartile',
@@ -358,7 +359,7 @@ shinyServer(function(input, output) {
                        name="",
                        breaks=c("FALSE","TRUE"),labels=c("Other Users", "Your Variance"))+
                       theme(axis.text.x = element_blank())+xlab("Users")+ylab("Happinese Score Variance")+
-                        annotate("text", x = 4.5, y = 31, label = "Scores Change a lot",color="#000099",size=6)+ annotate("text", x = 21.7, y = 31, label = "Scores change a little", color="brown",size=6)+
+                        annotate("text", x = 4.5, y = 31, label = "Scores change a lot",color="#000099",size=6)+ annotate("text", x = 21.7, y = 31, label = "Scores change a little", color="brown",size=6)+
                          geom_segment(aes(x = 18.5, y = 30.8, xend = 8, yend = 30.8), arrow = arrow(length = unit(0.3, "cm")),size=1.3)+
                          geom_segment(aes(x = 8, y = 30.8, xend = 18.5, yend = 30.8), arrow = arrow(length = unit(0.3, "cm")),size=1.3 )
 	
@@ -398,7 +399,7 @@ shinyServer(function(input, output) {
 			scale_y_continuous(limits = c(-1, 1)) +
 	  		theme(axis.text.x=element_text(color = "black", angle=0)) +
 			geom_bar(stat="identity") +
-			labs(x = "Period",y = "Happiness Score Normalized",title="People's Happiest Day of Week") +
+			labs(x = "Period",y = "Happiness Score Normalized",title="People's Happiest Time of Day") +
 			scale_fill_discrete("Period") +
 		    scale_x_discrete(labels=period_labels)
 			
@@ -436,16 +437,17 @@ shinyServer(function(input, output) {
 	  					scale_fill_manual(values=c("#999999", "#E69F00"), 
 	                         name="",
 	                         breaks=c("FALSE","TRUE"),
-							 labels=c("Other Users", "Your Variance")) +
+							 labels=c("All Users", "Your Variance")) +
 	  					geom_bar(stat="identity",position="dodge") +
-	  					xlab("Would you rather be doing something other than what you're doing right now?") + 
+						theme(axis.text.x = element_text(size=13)) + 
+						xlab(" ") +
 						ylab("Happiness Score Normalized")
 	  print(preference_p)
   })
   
 	output$loc_act_text <- renderPlot({
-	  p_act <- best_plot('act')
-	  p_loc <- best_plot('loc')
+	  p_act <- best_plot('act',"What are you doing?")
+	  p_loc <- best_plot('loc',"Where are you?")
     grid.arrange(p_act,p_loc,nrow=1)
 
 	})
