@@ -2,7 +2,7 @@ library(shiny)
 library(ggplot2) 
 library(grid)
 library(gridExtra) #needed for arrow head
-#library(RODBC)
+library(RODBC)
 library(sqldf)
 library(plyr)
 
@@ -107,7 +107,7 @@ loc_act <- ggplot(loc_act_df, aes(x=reorder(avg_Q1,act), y=avg_Q1, fill=loc,labe
 
 
 xy_max=30
-best_plot <- function(code=0, attr){
+best_plot <- function(attr){
   best_p <- ggplot() +  theme( axis.text.x = element_blank(), 
                    axis.text.y = element_blank(),
                    panel.grid.major = element_blank(), 
@@ -117,14 +117,7 @@ best_plot <- function(code=0, attr){
                    plot.margin = unit(c(1,1,0,0), "lines")) + labs(x=NULL, y=NULL)+
                   annotate("text", x =0, y = 0, size=0,label = "")+
                   annotate("text", x =xy_max, y =xy_max, size=0,label = "")
-  if ((code==0) & (attr=='loc')) {local_df <- best_loc_df} else if ((code==0) & (attr=='act')) {local_df <- best_act_df} 
-  else if ((code %in% person_loc$code) &  (attr=='loc')) {
-    local_df0<-person_loc[person_loc$code==code,]
-    local_df <- local_df0[order(-local_df0$avg_Q1),]}
-  else if ((code %in% person_loc$code) &  (attr=='act')) {
-    local_df0<-person_act[person_act$code==code,]
-    local_df <- local_df0[order(-local_df0$avg_Q1),]}
-  
+  if (attr=='loc') {local_df <- best_loc_df} else if (attr=='act') {local_df <- best_act_df} 
   for (i in 1:nrow(local_df) ) {
     if (local_df$avg_Q1[i]>=0) {txt_clr='deeppink1';j<-i}
     else {txt_clr='steelblue4';j<- max(j-1,0)}
@@ -134,8 +127,24 @@ best_plot <- function(code=0, attr){
 }
 
 
-best_plot(4060,'act')
-
+personal_pref <- function(code, attr){
+  if ((code %in% person_loc$code) &  (attr=='loc')) {
+  local_df<-person_loc[person_loc$code==code,] 
+  #local_df<-person_loc[person_loc$code==19567,] 
+  #max_num <- max(local_df$avg_Q1)
+  #as.character(local_df[local_df$avg_Q1==max_num,]['loc'][1,])
+  
+  }
+  else if ((code %in% person_loc$code) &  (attr=='act')) {
+  local_df<-person_act[person_act$code==code,]
+  }
+  max_num <- max(local_df$avg_Q1)
+  min_num <- min(local_df$avg_Q1)
+  most_hp <- as.character(local_df[local_df$avg_Q1==max_num,][attr][1,])
+  least_hp <- as.character(local_df[local_df$avg_Q1==min_num,][attr][1,])   
+  
+  return (c(most_hp, least_hp))
+}
 
 #Time
 day_labels <- c('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')
@@ -331,7 +340,7 @@ shinyServer(function(input, output) {
 					scale_x_continuous(limit=c(1,100)) + 
 					geom_density(color="grey" ,alpha = 0.6)+
 	        		xlab("Self Reported Happiness Score (1-100)") + ylab("Density of Responses") + 
-					geom_vline(data=means, aes(xintercept=Q1.mean,fill=to_clr), size=1) +
+					geom_vline(data=means, aes(xintercept=Q1.mean), linetype = "dashed", alpha=0.6, size=1) +
 					scale_fill_manual(values=c("#999999", "#E69F00"), 
 	                     name="",
 	                     breaks=c("FALSE","TRUE"),
@@ -349,12 +358,26 @@ shinyServer(function(input, output) {
                        name="",
                        breaks=c("FALSE","TRUE"),labels=c("Other Users", "Your Variance"))+
                       theme(axis.text.x = element_blank())+xlab("Users")+ylab("Happinese Score Variance")+
-                        annotate("text", x = 4.5, y = 31, label = "High Variance",color="#000099",size=6)+ annotate("text", x = 21.7, y = 31, label = "Low Variance", color="brown",size=6)+
+                        annotate("text", x = 4.5, y = 31, label = "Scores Change a lot",color="#000099",size=6)+ annotate("text", x = 21.7, y = 31, label = "Scores change a little", color="brown",size=6)+
                          geom_segment(aes(x = 18.5, y = 30.8, xend = 8, yend = 30.8), arrow = arrow(length = unit(0.3, "cm")),size=1.3)+
                          geom_segment(aes(x = 8, y = 30.8, xend = 18.5, yend = 30.8), arrow = arrow(length = unit(0.3, "cm")),size=1.3 )
-
-    
+	
     print(out_p2)
+  })
+  
+  output$happiness_swings_text <- renderText({
+	  if (codename() %in% code_list) {
+	  	temp_df <- na.omit(var_plot())
+	  	user_val <- temp_df[temp_df$code==codename(),]['Q1'][1,]
+	  	if (user_val < mean(temp_df$Q1)) {
+			out_text <- "Your bar is more to the right, your happiness scores don't tend to change very much. Maybe little things don't affect you as much."
+		} else {
+			out_text <- "Your bar is more to the left, your scores tend to vary more than other peoples' scores. This might mean that you're a more sensitive person. Maybe little things affect you more." 
+		}
+		print(out_text)
+	   } else {
+			print("")
+		}
   })
   
   output$Var_Time_Dist <- renderPlot({
@@ -421,19 +444,34 @@ shinyServer(function(input, output) {
   })
   
 	output$loc_act_text <- renderPlot({
-	  p_act <- best_plot(0,'act')
-	  p_loc <- best_plot(0,'loc')
-	  if ((codename() %in% person_loc$code)) {per_loc <- best_plot(codename(),'loc')}
-	  if ((codename() %in% person_act$code)) {per_act <- best_plot(codename(),'act')}
-    
-    if (!(codename() %in% person_act$code) & (!codename() %in% person_loc$code)) {grid.arrange(p_act,p_loc,nrow=1)}
-    else if ((codename() %in% person_act$code) & (!codename() %in% person_loc$code)) {grid.arrange(p_act,p_loc, per_act,nrow=2)}
-    else if (!(codename() %in% person_act$code) & (codename() %in% person_loc$code)){grid.arrange(p_act,p_loc, per_loc,nrow=2)}
-	  else if ((codename() %in% person_act$code) & (codename() %in% person_loc$code)){grid.arrange(p_act,p_loc,per_act,per_loc,nrow=2)}
+	  p_act <- best_plot('act')
+	  p_loc <- best_plot('loc')
+    grid.arrange(p_act,p_loc,nrow=1)
 
 	})
   
   output$loc_act_p <- renderPlot(print(loc_act))
+
+
+  output$hello <- renderText({
+    if (codename() %in% code_list){
+      paste("Hello,", codename()) 
+    }
+    else ""
+  })
+  
+	output$per_loc <- renderText({
+    if (codename() %in% person_loc$code){
+    paste("You are happier at",personal_pref(codename(),'loc')[1],"than at",personal_pref(codename(),'loc')[2])
+    }
+    else ""
+	})
+	output$per_act <- renderText({
+    if (codename() %in% person_act$code){
+      paste("You are happier",personal_pref(codename(),'act')[1],"than",personal_pref(codename(),'act')[2])
+    }
+    else ""
+    })
 
 
 }) 

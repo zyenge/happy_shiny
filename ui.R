@@ -9,8 +9,12 @@ shinyUI(
       sidebarPanel( 
         textInput(inputId="text1", label = "Enter your code here"),
         actionButton('Submit','Submit'),
-        textOutput("error_test"),
-        textOutput("code_error")
+        textOutput("code_error"),
+        h4(textOutput("hello")),
+        h5(textOutput("per_act")),
+        br(),
+        h5(textOutput("per_loc"))
+
         
                 
     ),
@@ -30,16 +34,15 @@ shinyUI(
       h3('Happiness Swings'),
       plotOutput("Var_Dist"),
       br(),
-      p("If you are more to the left, you've got have a strong heart for the big ups and downs in you life."),
-      p("If you are more to the right..your happiness level is so stable..what are you? a rock?"),      
+	  p("Each bar is a person. The y-axis is the variance of each person's happiness score. Variance is a measure of how much the score deviates from the mean."),
+      textOutput("happiness_swings_text"),
       br(),
       br(),
       h3('True to yourself: When in doubt, do something else'),
       h5("Answer to Question 4: Would you rather be doing something other than what you're doing right now?"),
       plotOutput("preference_hist"),
       br(),
-      p("The Y-axis is the normalized happiness score with average happiness at 0. For the group (gray bars), when people answer 'No', you can see that people report scores >.3 deviations above the group mean. Intuitively, that makes sense. If you'd rather not be doing something else, you're probably a little happier than if you answered 'Yes'. Indeed, we see that this is the case for most people. As for the times that people are 'Not Sure', it's below 0. So, most are slightly unhappier when reporting 'Not Sure', So ... when you feel like this, (if you can afford to do so), do something else :)"),
-	  p("*Note: for your nerds out there, we ran an ANOVA test to compare the means across groups, the means are significantly different, with a p value <.0005"),
+      p("The Y-axis is the normalized happiness score. Therefore, the average happiness is 0.0. For most people (gray bars), when they answer 'No', you can see that people report scores significantly higher than the group mean. Intuitively, that makes sense. If you'd rather not be doing something else, you're probably a little happier than if you answered 'Yes'. When people answer 'Not Sure', their happiness is usually below the group mean. So, most people are slightly unhappier when reporting 'Not Sure', So ... when you feel like this, (if you can afford to do so), do something else :)"),
 	  br(),
 	  br(),
 	  h3('Happiest Time'),
@@ -53,7 +56,7 @@ shinyUI(
       h3("Shopping makes you smile, work does not (surprise, surprise)"),
       h4("Exercising feels better than eating? could it be?... "),
       br(),
-      plotOutput("loc_act_text",height=800),
+      plotOutput("loc_act_text",height=550),
       h5("Top to bottom, from happy to unhappy decsending, blue font means below average unhappy.."),
       br(),
       br(),
