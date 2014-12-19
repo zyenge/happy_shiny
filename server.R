@@ -2,7 +2,6 @@ library(shiny)
 library(ggplot2) 
 library(grid)
 library(gridExtra) #needed for arrow head
-#library(RODBC)
 library(sqldf)
 library(plyr)
 
@@ -14,18 +13,6 @@ Q1_dist <- as.data.frame(df_nok$Q1, names='Q1')
 Q1_dist$code <- 'All Users'
 colnames(Q1_dist) <- c("Q1", "code")
 variance_df <-data.frame(aggregate(Q1 ~ code, df, sd))
-
-#########
-# mysql <-odbcConnect("local_mysql")
-# loc_act <- sqlQuery(mysql, "
-# SELECT case when location<>'Other' then location else Q2_Other end as Location,
-# case when act<>'Other' then act else Q3_Other end as act,
-#  count(distinct code) user_cnt,  count(*) cnt, avg(Z_q1) 
-# FROM test.mvp_exported group by location, act having user_cnt>5
-# ;
-# ");
-# close(mysql)
-###
 
 code_list <- sqldf("select distinct code from df")$code
 
